@@ -1,72 +1,31 @@
 #PROGRAM-4
 
-import numpy as np
-import pandas as pd
-import warnings
-import tensorflow as tf  # Import TensorFlow
-import numpy as np
-import keras
-from tensorflow.keras import layers
-import matplotlib.pyplot as plt
-from tensorflow.keras.datasets import reuters
-
-# Load the Reuters dataset
-(train_data, train_labels), (test_data, test_labels) = reuters.load_data(num_words=10000)
-
-# Retrieve word index
-word_index = reuters.get_word_index()
-reverse_word_index = dict([(value, key) for (key, value) in word_index.items()])
-decoded_newswire = ' '.join([reverse_word_index.get(i - 3, '?') for i in train_data[0]])
-
-# Vectorize sequences
-def vectorize_sequences(sequences, dimension=10000):
-    results = np.zeros((len(sequences), dimension))
-    for i, sequence in enumerate(sequences):
-        results[i, sequence] = 1.
-    return results
-
-x_train = vectorize_sequences(train_data)  # 1
-x_test = vectorize_sequences(test_data)    # 2
-
-# One-hot encode labels
-def to_one_hot(labels, dimension=46):
-    results = np.zeros((len(labels), dimension))
-    for i, label in enumerate(labels):
-        results[i, label] = 1.
-    return results
-
-one_hot_train_labels = to_one_hot(train_labels)  # 1
-one_hot_test_labels = to_one_hot(test_labels)    # 2
-
-from tensorflow.keras.utils import to_categorical
-one_hot_train_labels = to_categorical(train_labels)
-one_hot_test_labels = to_categorical(test_labels)
-
-# Define the model
-model = keras.Sequential([
-    layers.Dense(64, activation='relu'),
-    layers.Dense(64, activation='relu'),
-    layers.Dense(46, activation='softmax')
-])
-
-# Compile the model
-model.compile(optimizer='rmsprop',
-              loss='categorical_crossentropy',
-              metrics=['accuracy'])
-
-# Validation and partial training sets
-x_val = x_train[:1000]
-partial_x_train = x_train[1000:]
-y_val = one_hot_train_labels[:1000]
-partial_y_train = one_hot_train_labels[1000:]
-
-# Train the model
-history = model.fit(partial_x_train,
-                    partial_y_train,
-                    epochs=25,
-                    batch_size=512,
-                    validation_data=(x_val, y_val))
-
-# Evaluate the model
-results = model.evaluate(x_test, one_hot_test_labels)
-
+import tensorflow as tf 
+from tensorflow.keras.datasets import mnist 
+from tensorflow.keras.models import Sequential 
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense 
+# Load the MNIST dataset 
+(X_train, y_train), (X_test, y_test) = mnist.load_data() 
+# Preprocess the data 
+X_train = X_train.reshape(X_train.shape[0], 28, 28, 1).astype('float32') / 255 
+X_test = X_test.reshape(X_test.shape[0], 28, 28, 1).astype('float32') / 255 
+# Convert labels to one-hot encoding 
+y_train = tf.keras.utils.to_categorical(y_train, 10) 
+y_test = tf.keras.utils.to_categorical(y_test, 10) 
+# Build the CNN model 
+model = Sequential([ 
+Conv2D(32, kernel_size=(3, 3), activation='relu', input_shape=(28, 28, 1)), 
+MaxPooling2D(pool_size=(2, 2)), 
+Conv2D(64, kernel_size=(3, 3), activation='relu'), 
+MaxPooling2D(pool_size=(2, 2)), 
+Flatten(), 
+Dense(128, activation='relu'), 
+Dense(10, activation='softmax') 
+]) 
+# Compile the model 
+model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy']) 
+# Train the model 
+model.fit(X_train, y_train, epochs=10, batch_size=32, validation_split=0.2) 
+# Evaluate the model 
+loss, accuracy = model.evaluate(X_test, y_test) 
+print(f'Accuracy: {accuracy}') 
